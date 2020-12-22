@@ -17,6 +17,7 @@ import {
   transact,
   ArraySearchMarker, AbstractUpdateDecoder, AbstractUpdateEncoder, Doc, Transaction, Item // eslint-disable-line
 } from '../internals.js'
+import { typeListSlice } from './AbstractType.js'
 
 /**
  * Event that describes the changes on a YArray
@@ -54,6 +55,18 @@ export class YArray extends AbstractType {
   }
 
   /**
+   * Construct a new YArray containing the specified items.
+   * @template T
+   * @param {Array<T>} items
+   * @return {YArray<T>}
+   */
+  static from (items) {
+    const a = new YArray()
+    a.push(items)
+    return a
+  }
+
+  /**
    * Integrate this type into the Yjs instance.
    *
    * * Save this struct in the os
@@ -71,6 +84,17 @@ export class YArray extends AbstractType {
 
   _copy () {
     return new YArray()
+  }
+
+  /**
+   * @return {YArray<T>}
+   */
+  clone () {
+    const arr = new YArray()
+    arr.insert(0, this.toArray().map(el =>
+      el instanceof AbstractType ? el.clone() : el
+    ))
+    return arr
   }
 
   get length () {
@@ -165,6 +189,17 @@ export class YArray extends AbstractType {
    */
   toArray () {
     return typeListToArray(this)
+  }
+
+  /**
+   * Transforms this YArray to a JavaScript Array.
+   *
+   * @param {number} [start]
+   * @param {number} [end]
+   * @return {Array<T>}
+   */
+  slice (start = 0, end = this.length) {
+    return typeListSlice(this, start, end)
   }
 
   /**

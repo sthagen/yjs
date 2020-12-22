@@ -20,6 +20,21 @@ export const testBasicUpdate = tc => {
 /**
  * @param {t.TestCase} tc
  */
+export const testSlice = tc => {
+  const doc1 = new Y.Doc()
+  const arr = doc1.getArray('array')
+  arr.insert(0, [1, 2, 3])
+  t.compareArrays(arr.slice(0), [1, 2, 3])
+  t.compareArrays(arr.slice(1), [2, 3])
+  t.compareArrays(arr.slice(0, -1), [1, 2])
+  arr.insert(0, [0])
+  t.compareArrays(arr.slice(0), [0, 1, 2, 3])
+  t.compareArrays(arr.slice(0, 2), [0, 1])
+}
+
+/**
+ * @param {t.TestCase} tc
+ */
 export const testDeleteInsert = tc => {
   const { users, array0 } = init(tc, { users: 2 })
   array0.delete(0, 0)
@@ -202,6 +217,34 @@ export const testInsertAndDeleteEventsForTypes = tc => {
   t.assert(event !== null)
   event = null
   compare(users)
+}
+
+/**
+ * This issue has been reported in https://discuss.yjs.dev/t/order-in-which-events-yielded-by-observedeep-should-be-applied/261/2
+ *
+ * Deep observers generate multiple events. When an array added at item at, say, position 0,
+ * and item 1 changed then the array-add event should fire first so that the change event
+ * path is correct. A array binding might lead to an inconsistent state otherwise.
+ *
+ * @param {t.TestCase} tc
+ */
+export const testObserveDeepEventOrder = tc => {
+  const { array0, users } = init(tc, { users: 2 })
+  /**
+   * @type {Array<any>}
+   */
+  let events = []
+  array0.observeDeep(e => {
+    events = e
+  })
+  array0.insert(0, [new Y.Map()])
+  users[0].transact(() => {
+    array0.get(0).set('a', 'a')
+    array0.insert(0, [0])
+  })
+  for (let i = 1; i < events.length; i++) {
+    t.assert(events[i - 1].path.length <= events[i].path.length, 'path size increases, fire top-level events first')
+  }
 }
 
 /**
