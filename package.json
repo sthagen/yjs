@@ -1,6 +1,6 @@
 {
   "name": "yjs",
-  "version": "13.4.9",
+  "version": "13.5.1",
   "description": "Shared Editing Library",
   "main": "./dist/yjs.cjs",
   "module": "./dist/yjs.mjs",
@@ -23,17 +23,24 @@
     "debug": "concurrently 'http-server -o test.html' 'npm run watch'",
     "trace-deopt": "clear && rollup -c  && node --trace-deopt dist/test.cjs",
     "trace-opt": "clear && rollup -c  && node --trace-opt dist/test.cjs",
-    "postinstall": "node ./funding.cjs"
+    "postinstall": "node ./sponsor-y.js"
+  },
+  "exports": {
+    ".": {
+      "import": "./dist/yjs.mjs",
+      "require": "./dist/yjs.cjs"
+    },
+    "./src/index.js": "./src/index.js",
+    "./tests/testHelper.js": "./tests/testHelper.js"
   },
   "files": [
-    "dist/*",
-    "src/*",
-    "tests/*",
-    "docs/*",
-    "funding.cjs"
+    "dist/yjs.*",
+    "dist/src",
+    "src",
+    "tests/testHelper.js",
+    "sponsor-y.js"
   ],
   "dictionaries": {
-    "doc": "docs",
     "test": "tests"
   },
   "standard": {
@@ -61,22 +68,21 @@
   "bugs": {
     "url": "https://github.com/yjs/yjs/issues"
   },
-  "homepage": "https://yjs.dev",
+  "homepage": "https://docs.yjs.dev",
   "dependencies": {
-    "lib0": "^0.2.33"
+    "lib0": "^0.2.38"
   },
   "devDependencies": {
-    "@rollup/plugin-commonjs": "^11.1.0",
-    "@rollup/plugin-node-resolve": "^7.1.3",
+    "@rollup/plugin-commonjs": "^17.0.0",
+    "@rollup/plugin-node-resolve": "^11.2.0",
     "concurrently": "^3.6.1",
     "http-server": "^0.12.3",
-    "jsdoc": "^3.6.5",
+    "jsdoc": "^3.6.6",
     "markdownlint-cli": "^0.23.2",
-    "rollup": "^1.32.1",
-    "rollup-cli": "^1.0.9",
+    "rollup": "^2.39.0",
     "standard": "^14.3.4",
     "tui-jsdoc-template": "^1.2.2",
-    "typescript": "^3.9.7",
-    "y-protocols": "^0.2.3"
+    "typescript": "^4.1.5",
+    "y-protocols": "^1.0.4"
   }
 }

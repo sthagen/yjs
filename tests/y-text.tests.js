@@ -81,6 +81,49 @@ export const testBasicFormat = tc => {
 /**
  * @param {t.TestCase} tc
  */
+export const testMultilineFormat = tc => {
+  const ydoc = new Y.Doc()
+  const testText = ydoc.getText('test')
+  testText.insert(0, 'Test\nMulti-line\nFormatting')
+  testText.applyDelta([
+    { retain: 4, attributes: { bold: true } },
+    { retain: 1 }, // newline character
+    { retain: 10, attributes: { bold: true } },
+    { retain: 1 }, // newline character
+    { retain: 10, attributes: { bold: true } }
+  ])
+  t.compare(testText.toDelta(), [
+    { insert: 'Test', attributes: { bold: true } },
+    { insert: '\n' },
+    { insert: 'Multi-line', attributes: { bold: true } },
+    { insert: '\n' },
+    { insert: 'Formatting', attributes: { bold: true } }
+  ])
+}
+
+/**
+ * @param {t.TestCase} tc
+ */
+export const testNotMergeEmptyLinesFormat = tc => {
+  const ydoc = new Y.Doc()
+  const testText = ydoc.getText('test')
+  testText.applyDelta([
+    { insert: 'Text' },
+    { insert: '\n', attributes: { title: true } },
+    { insert: '\nText' },
+    { insert: '\n', attributes: { title: true } }
+  ])
+  t.compare(testText.toDelta(), [
+    { insert: 'Text' },
+    { insert: '\n', attributes: { title: true } },
+    { insert: '\nText' },
+    { insert: '\n', attributes: { title: true } }
+  ])
+}
+
+/**
+ * @param {t.TestCase} tc
+ */
 export const testGetDeltaWithEmbeds = tc => {
   const { text0 } = init(tc, { users: 1 })
   text0.applyDelta([{
@@ -286,7 +329,9 @@ export const testBestCase = tc => {
 }
 
 const tryGc = () => {
+  // @ts-ignore
   if (typeof global !== 'undefined' && global.gc) {
+    // @ts-ignore
     global.gc()
   }
 }
@@ -319,6 +364,42 @@ export const testLargeFragmentedDocument = tc => {
     tryGc()
     t.measureTime(`time to apply ${itemsToInsert} updates`, () => {
       Y.applyUpdateV2(doc2, update)
+    })
+  })()
+}
+
+/**
+ * @param {t.TestCase} tc
+ */
+export const testIncrementalUpdatesPerformanceOnLargeFragmentedDocument = tc => {
+  const itemsToInsert = largeDocumentSize
+  const updates = /** @type {Array<Uint8Array>} */ ([])
+  ;(() => {
+    const doc1 = new Y.Doc()
+    doc1.on('update', update => {
+      updates.push(update)
+    })
+    const text0 = doc1.getText('txt')
+    tryGc()
+    t.measureTime(`time to insert ${itemsToInsert} items`, () => {
+      doc1.transact(() => {
+        for (let i = 0; i < itemsToInsert; i++) {
+          text0.insert(0, '0')
+        }
+      })
+    })
+    tryGc()
+  })()
+  ;(() => {
+    t.measureTime(`time to merge ${itemsToInsert} updates (differential updates)`, () => {
+      Y.mergeUpdates(updates)
+    })
+    tryGc()
+    t.measureTime(`time to merge ${itemsToInsert} updates (ydoc updates)`, () => {
+      const ydoc = new Y.Doc()
+      updates.forEach(update => {
+        Y.applyUpdate(ydoc, update)
+      })
     })
   })()
 }

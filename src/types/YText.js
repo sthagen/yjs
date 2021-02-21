@@ -26,7 +26,7 @@ import {
   typeMapGet,
   typeMapGetAll,
   updateMarkerChanges,
-  ArraySearchMarker, AbstractUpdateDecoder, AbstractUpdateEncoder, ID, Doc, Item, Snapshot, Transaction // eslint-disable-line
+  ArraySearchMarker, UpdateDecoderV1, UpdateDecoderV2, UpdateEncoderV1, UpdateEncoderV2, ID, Doc, Item, Snapshot, Transaction // eslint-disable-line
 } from '../internals.js'
 
 import * as object from 'lib0/object.js'
@@ -164,11 +164,12 @@ const insertNegatedAttributes = (transaction, parent, currPos, negatedAttributes
   }
   const doc = transaction.doc
   const ownClientId = doc.clientID
-  let left = currPos.left
+  let nextFormat = currPos.left
   const right = currPos.right
   negatedAttributes.forEach((val, key) => {
-    left = new Item(createID(ownClientId, getState(doc.store, ownClientId)), left, left && left.lastId, right, right && right.id, parent, null, new ContentFormat(key, val))
-    left.integrate(transaction, 0)
+    nextFormat = new Item(createID(ownClientId, getState(doc.store, ownClientId)), nextFormat, nextFormat && nextFormat.lastId, right, right && right.id, parent, null, new ContentFormat(key, val))
+    nextFormat.integrate(transaction, 0)
+    currPos.right = nextFormat
   })
 }
 
@@ -1203,7 +1204,7 @@ export class YText extends AbstractType {
   }
 
   /**
-   * @param {AbstractUpdateEncoder} encoder
+   * @param {UpdateEncoderV1 | UpdateEncoderV2} encoder
    */
   _write (encoder) {
     encoder.writeTypeRef(YTextRefID)
@@ -1211,7 +1212,7 @@ export class YText extends AbstractType {
 }
 
 /**
- * @param {AbstractUpdateDecoder} decoder
+ * @param {UpdateDecoderV1 | UpdateDecoderV2} decoder
  * @return {YText}
  *
  * @private
