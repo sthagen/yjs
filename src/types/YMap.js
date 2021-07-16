@@ -17,7 +17,7 @@ import {
   UpdateDecoderV1, UpdateDecoderV2, UpdateEncoderV1, UpdateEncoderV2, Doc, Transaction, Item // eslint-disable-line
 } from '../internals.js'
 
-import * as iterator from 'lib0/iterator.js'
+import * as iterator from 'lib0/iterator'
 
 /**
  * @template T
@@ -235,6 +235,21 @@ export class YMap extends AbstractType {
    */
   has (key) {
     return typeMapHas(this, key)
+  }
+
+  /**
+   * Removes all elements from this YMap.
+   */
+  clear () {
+    if (this.doc !== null) {
+      transact(this.doc, transaction => {
+        this.forEach(function (value, key, map) {
+          typeMapDelete(transaction, map, key)
+        })
+      })
+    } else {
+      /** @type {Map<string, any>} */ (this._prelimContent).clear()
+    }
   }
 
   /**

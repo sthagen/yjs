@@ -1,9 +1,9 @@
-import * as t from 'lib0/testing.js'
+import * as t from 'lib0/testing'
 import { init, compare } from './testHelper.js' // eslint-disable-line
 import * as Y from '../src/index.js'
 import { readClientsStructRefs, readDeleteSet, UpdateDecoderV2, UpdateEncoderV2, writeDeleteSet } from '../src/internals.js'
-import * as encoding from 'lib0/encoding.js'
-import * as decoding from 'lib0/decoding.js'
+import * as encoding from 'lib0/encoding'
+import * as decoding from 'lib0/decoding'
 
 /**
  * @typedef {Object} Enc
@@ -166,9 +166,7 @@ const checkUpdateCases = (ydoc, updates, enc, hasDeletes) => {
         const targetSV = Y.encodeStateVectorFromUpdateV2(Y.mergeUpdatesV2(updates.slice(0, j)))
         const diffed = enc.diffUpdate(mergedUpdates, targetSV)
         const diffedMeta = enc.parseUpdateMeta(diffed)
-        const decDiffedSV = Y.decodeStateVector(enc.encodeStateVectorFromUpdate(diffed))
         t.compare(partMeta, diffedMeta)
-        t.compare(decDiffedSV, partMeta.to)
         {
           // We can'd do the following
           //  - t.compare(diffed, mergedDeletes)
@@ -242,5 +240,49 @@ export const testMergeUpdates2 = tc => {
 }
 
 /**
- * @todo be able to apply Skip structs to Yjs docs
+ * @param {t.TestCase} tc
  */
+export const testMergePendingUpdates = tc => {
+  const yDoc = new Y.Doc()
+  /**
+   * @type {Array<Uint8Array>}
+   */
+  const serverUpdates = []
+  yDoc.on('update', (update, origin, c) => {
+    serverUpdates.splice(serverUpdates.length, 0, update)
+  })
+  const yText = yDoc.getText('textBlock')
+  yText.applyDelta([{ insert: 'r' }])
+  yText.applyDelta([{ insert: 'o' }])
+  yText.applyDelta([{ insert: 'n' }])
+  yText.applyDelta([{ insert: 'e' }])
+  yText.applyDelta([{ insert: 'n' }])
+
+  const yDoc1 = new Y.Doc()
+  Y.applyUpdate(yDoc1, serverUpdates[0])
+  const update1 = Y.encodeStateAsUpdate(yDoc1)
+
+  const yDoc2 = new Y.Doc()
+  Y.applyUpdate(yDoc2, update1)
+  Y.applyUpdate(yDoc2, serverUpdates[1])
+  const update2 = Y.encodeStateAsUpdate(yDoc2)
+
+  const yDoc3 = new Y.Doc()
+  Y.applyUpdate(yDoc3, update2)
+  Y.applyUpdate(yDoc3, serverUpdates[3])
+  const update3 = Y.encodeStateAsUpdate(yDoc3)
+
+  const yDoc4 = new Y.Doc()
+  Y.applyUpdate(yDoc4, update3)
+  Y.applyUpdate(yDoc4, serverUpdates[2])
+  const update4 = Y.encodeStateAsUpdate(yDoc4)
+
+  const yDoc5 = new Y.Doc()
+  Y.applyUpdate(yDoc5, update4)
+  Y.applyUpdate(yDoc5, serverUpdates[4])
+  // @ts-ignore
+  const update5 = Y.encodeStateAsUpdate(yDoc5) // eslint-disable-line
+
+  const yText5 = yDoc5.getText('textBlock')
+  t.compareStrings(yText5.toString(), 'nenor')
+}

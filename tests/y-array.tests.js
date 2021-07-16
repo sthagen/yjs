@@ -1,9 +1,9 @@
 import { init, compare, applyRandomTests, Doc } from './testHelper.js' // eslint-disable-line
 
 import * as Y from '../src/index.js'
-import * as t from 'lib0/testing.js'
-import * as prng from 'lib0/prng.js'
-import * as math from 'lib0/math.js'
+import * as t from 'lib0/testing'
+import * as prng from 'lib0/prng'
+import * as math from 'lib0/math'
 
 /**
  * @param {t.TestCase} tc
@@ -30,6 +30,78 @@ export const testSlice = tc => {
   arr.insert(0, [0])
   t.compareArrays(arr.slice(0), [0, 1, 2, 3])
   t.compareArrays(arr.slice(0, 2), [0, 1])
+}
+
+/**
+ * Debugging yjs#297 - a critical bug connected to the search-marker approach
+ *
+ * @param {t.TestCase} tc
+ */
+export const testLengthIssue = tc => {
+  const doc1 = new Y.Doc()
+  const arr = doc1.getArray('array')
+  arr.push([0, 1, 2, 3])
+  arr.delete(0)
+  arr.insert(0, [0])
+  t.assert(arr.length === arr.toArray().length)
+  doc1.transact(() => {
+    arr.delete(1)
+    t.assert(arr.length === arr.toArray().length)
+    arr.insert(1, [1])
+    t.assert(arr.length === arr.toArray().length)
+    arr.delete(2)
+    t.assert(arr.length === arr.toArray().length)
+    arr.insert(2, [2])
+    t.assert(arr.length === arr.toArray().length)
+  })
+  t.assert(arr.length === arr.toArray().length)
+  arr.delete(1)
+  t.assert(arr.length === arr.toArray().length)
+  arr.insert(1, [1])
+  t.assert(arr.length === arr.toArray().length)
+}
+
+/**
+ * Debugging yjs#314
+ *
+ * @param {t.TestCase} tc
+ */
+export const testLengthIssue2 = tc => {
+  const doc = new Y.Doc()
+  const next = doc.getArray()
+  doc.transact(() => {
+    next.insert(0, ['group2'])
+  })
+  doc.transact(() => {
+    next.insert(1, ['rectangle3'])
+  })
+  doc.transact(() => {
+    next.delete(0)
+    next.insert(0, ['rectangle3'])
+  })
+  next.delete(1)
+  doc.transact(() => {
+    next.insert(1, ['ellipse4'])
+  })
+  doc.transact(() => {
+    next.insert(2, ['ellipse3'])
+  })
+  doc.transact(() => {
+    next.insert(3, ['ellipse2'])
+  })
+  doc.transact(() => {
+    doc.transact(() => {
+      t.fails(() => {
+        next.insert(5, ['rectangle2'])
+      })
+      next.insert(4, ['rectangle2'])
+    })
+    doc.transact(() => {
+      // this should not throw an error message
+      next.delete(4)
+    })
+  })
+  console.log(next.toArray())
 }
 
 /**

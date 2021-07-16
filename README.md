@@ -49,6 +49,8 @@ Sponsorship also comes with special perks! [![Become a Sponsor](https://img.shie
 
 ## Who is using Yjs
 
+* [Serenity Notes](https://www.serenity.re/en/notes) End-to-end encrypted
+  collaborative notes app.
 * [Relm](https://www.relm.us/) A collaborative gameworld for teamwork and
   community. :star2:
 * [Input](https://input.com/) A collaborative note taking app. :star2:
@@ -65,7 +67,7 @@ Sponsorship also comes with special perks! [![Become a Sponsor](https://img.shie
   collaboratively organize radio broadcasts.
 * [Cattaz](http://cattaz.io/) A wiki that can run custom applications in the
   wiki pages.
-* [Alldone](https://alldoneapp.com/) A next-gen project management and
+* [Alldone](https://alldone.app/) A next-gen project management and
   collaboration platform.
 
 ## Table of Contents
@@ -129,7 +131,7 @@ network provider.
   </dd>
   <dt><a href="https://github.com/yjs/y-dat">y-dat</a></dt>
   <dd>
-[WIP] Write document updates effinciently to the dat network using
+[WIP] Write document updates efficiently to the dat network using
 <a href="https://github.com/kappa-db/multifeed">multifeed</a>. Each client has
 an append-only log of CRDT local updates (hypercore). Multifeed manages and sync
 hypercores and y-dat listens to changes and applies them to the Yjs document.
@@ -332,6 +334,8 @@ or any of its children.
     <dd></dd>
     <b><code>get(index:number)</code></b>
     <dd></dd>
+    <b><code>clear()</code></b>
+    <dd>Removes all elements from this YMap.</dd>
     <b><code>clone():Y.Map</code></b>
     <dd>Clone this type into a fresh Yjs type.</dd>
     <b><code>toJSON():Object&lt;string, Object|boolean|Array|string|number|Uint8Array&gt;</code></b>
@@ -815,7 +819,7 @@ pos.index === 2 // => true
 
 ### Y.UndoManager
 
-Yjs ships with an Undo/Redo manager for selective undo/redo of of changes on a
+Yjs ships with an Undo/Redo manager for selective undo/redo of changes on a
 Yjs type. The changes can be optionally scoped to transaction origins.
 
 ```js

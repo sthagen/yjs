@@ -1,7 +1,7 @@
 import { init, compare } from './testHelper.js'
 import * as Y from '../src/index.js'
 
-import * as t from 'lib0/testing.js'
+import * as t from 'lib0/testing'
 
 /**
  * @param {t.TestCase} tc
@@ -12,6 +12,23 @@ export const testSetProperty = tc => {
   t.assert(xml0.getAttribute('height') === '10', 'Simple set+get works')
   testConnector.flushAllMessages()
   t.assert(xml1.getAttribute('height') === '10', 'Simple set+get works (remote)')
+  compare(users)
+}
+
+/**
+ * @param {t.TestCase} tc
+ */
+export const testHasProperty = tc => {
+  const { testConnector, users, xml0, xml1 } = init(tc, { users: 2 })
+  xml0.setAttribute('height', '10')
+  t.assert(xml0.hasAttribute('height'), 'Simple set+has works')
+  testConnector.flushAllMessages()
+  t.assert(xml1.hasAttribute('height'), 'Simple set+has works (remote)')
+
+  xml0.removeAttribute('height')
+  t.assert(!xml0.hasAttribute('height'), 'Simple set+remove+has works')
+  testConnector.flushAllMessages()
+  t.assert(!xml1.hasAttribute('height'), 'Simple set+remove+has works (remote)')
   compare(users)
 }
 

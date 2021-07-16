@@ -1,5 +1,5 @@
-import * as t from 'lib0/testing.js'
-import * as promise from 'lib0/promise.js'
+import * as t from 'lib0/testing'
+import * as promise from 'lib0/promise'
 
 import {
   contentRefs,
@@ -17,6 +17,8 @@ import {
   encodeStateAsUpdate,
   applyUpdate
 } from '../src/internals.js'
+
+import * as Y from '../src/index.js'
 
 /**
  * @param {t.TestCase} tc
@@ -61,4 +63,46 @@ export const testPermanentUserData = async tc => {
   applyUpdate(ydoc3, encodeStateAsUpdate(ydoc1))
   const pd3 = new PermanentUserData(ydoc3)
   pd3.setUserMapping(ydoc3, ydoc3.clientID, 'user a')
+}
+
+/**
+ * Reported here: https://github.com/yjs/yjs/issues/308
+ * @param {t.TestCase} tc
+ */
+export const testDiffStateVectorOfUpdateIsEmpty = tc => {
+  const ydoc = new Y.Doc()
+  /**
+   * @type {null | Uint8Array}
+   */
+  let sv = /* any */ (null)
+  ydoc.getText().insert(0, 'a')
+  ydoc.on('update', update => {
+    sv = Y.encodeStateVectorFromUpdate(update)
+  })
+  // should produce an update with an empty state vector (because previous ops are missing)
+  ydoc.getText().insert(0, 'a')
+  t.assert(sv !== null && sv.byteLength === 1 && sv[0] === 0)
+}
+
+/**
+ * Reported here: https://github.com/yjs/yjs/issues/308
+ * @param {t.TestCase} tc
+ */
+export const testDiffStateVectorOfUpdateIgnoresSkips = tc => {
+  const ydoc = new Y.Doc()
+  /**
+   * @type {Array<Uint8Array>}
+   */
+  const updates = []
+  ydoc.on('update', update => {
+    updates.push(update)
+  })
+  ydoc.getText().insert(0, 'a')
+  ydoc.getText().insert(0, 'b')
+  ydoc.getText().insert(0, 'c')
+  const update13 = Y.mergeUpdates([updates[0], updates[2]])
+  const sv = Y.encodeStateVectorFromUpdate(update13)
+  const state = Y.decodeStateVector(sv)
+  t.assert(state.get(ydoc.clientID) === 1)
+  t.assert(state.size === 1)
 }

@@ -32,17 +32,19 @@ import {
   DSEncoderV2,
   DSDecoderV1,
   DSEncoderV1,
+  mergeUpdates,
   mergeUpdatesV2,
   Skip,
   diffUpdateV2,
+  convertUpdateFormatV2ToV1,
   DSDecoderV2, Doc, Transaction, GC, Item, StructStore // eslint-disable-line
 } from '../internals.js'
 
-import * as encoding from 'lib0/encoding.js'
-import * as decoding from 'lib0/decoding.js'
-import * as binary from 'lib0/binary.js'
-import * as map from 'lib0/map.js'
-import * as math from 'lib0/math.js'
+import * as encoding from 'lib0/encoding'
+import * as decoding from 'lib0/decoding'
+import * as binary from 'lib0/binary'
+import * as map from 'lib0/map'
+import * as math from 'lib0/math'
 
 /**
  * @param {UpdateEncoderV1 | UpdateEncoderV2} encoder
@@ -380,6 +382,8 @@ export const writeStructsFromTransaction = (encoder, transaction) => writeClient
  */
 export const readUpdateV2 = (decoder, ydoc, transactionOrigin, structDecoder = new UpdateDecoderV2(decoder)) =>
   transact(ydoc, transaction => {
+    // force that transaction.local is set to non-local
+    transaction.local = false
     let retry = false
     const doc = transaction.doc
     const store = doc.store
@@ -521,15 +525,16 @@ export const encodeStateAsUpdateV2 = (doc, encodedTargetStateVector = new Uint8A
   writeStateAsUpdate(encoder, doc, targetStateVector)
   const updates = [encoder.toUint8Array()]
   // also add the pending updates (if there are any)
-  // @todo support diffirent encoders
-  if (encoder.constructor === UpdateEncoderV2) {
-    if (doc.store.pendingDs) {
-      updates.push(doc.store.pendingDs)
-    }
-    if (doc.store.pendingStructs) {
-      updates.push(diffUpdateV2(doc.store.pendingStructs.update, encodedTargetStateVector))
-    }
-    if (updates.length > 1) {
+  if (doc.store.pendingDs) {
+    updates.push(doc.store.pendingDs)
+  }
+  if (doc.store.pendingStructs) {
+    updates.push(diffUpdateV2(doc.store.pendingStructs.update, encodedTargetStateVector))
+  }
+  if (updates.length > 1) {
+    if (encoder.constructor === UpdateEncoderV1) {
+      return mergeUpdates(updates.map((update, i) => i === 0 ? update : convertUpdateFormatV2ToV1(update)))
+    } else if (encoder.constructor === UpdateEncoderV2) {
       return mergeUpdatesV2(updates)
     }
   }

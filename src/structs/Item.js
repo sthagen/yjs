@@ -25,8 +25,8 @@ import {
   UpdateDecoderV1, UpdateDecoderV2, UpdateEncoderV1, UpdateEncoderV2, ContentType, ContentDeleted, StructStore, ID, AbstractType, Transaction // eslint-disable-line
 } from '../internals.js'
 
-import * as error from 'lib0/error.js'
-import * as binary from 'lib0/binary.js'
+import * as error from 'lib0/error'
+import * as binary from 'lib0/binary'
 
 /**
  * @todo This should return several items
@@ -566,6 +566,19 @@ export class Item extends AbstractStruct {
       this.content.constructor === right.content.constructor &&
       this.content.mergeWith(right.content)
     ) {
+      const searchMarker = /** @type {AbstractType<any>} */ (this.parent)._searchMarker
+      if (searchMarker) {
+        searchMarker.forEach(marker => {
+          if (marker.p === right) {
+            // right is going to be "forgotten" so we need to update the marker
+            marker.p = this
+            // adjust marker index
+            if (!this.deleted && this.countable) {
+              marker.index -= this.length
+            }
+          }
+        })
+      }
       if (right.keep) {
         this.keep = true
       }
